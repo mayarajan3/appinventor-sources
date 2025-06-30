@@ -82,9 +82,6 @@ async function predict() {
   prediction = await model.predict(androidWebcam.canvas);
   
   
-  console.log('Prediction done');
-  console.log(prediction);
-  console.log(typeof prediction);
   let result = [];
 
   for (let i = 0; i < maxPredictions; i++) {
