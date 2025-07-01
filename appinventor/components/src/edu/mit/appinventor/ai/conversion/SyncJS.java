@@ -40,12 +40,12 @@ public class SyncJS extends AndroidNonvisibleComponent {
     }
 
     @SimpleFunction(description = "Load HTML into the internal WebView")
-    public void LoadHtml(String html) {
+    public void LoadHTML(String html) {
         webView.loadDataWithBaseURL(null, html, "text/html", "utf-8", null);
     }
 
     @SimpleFunction(description = "Call JavaScript and wait for result synchronously")
-    public String CallAndWait(final String js) {
+    public String RunJSAndWait_Return(final String js) {
         jsResult = "";
 
         activity.runOnUiThread(new Runnable() {
