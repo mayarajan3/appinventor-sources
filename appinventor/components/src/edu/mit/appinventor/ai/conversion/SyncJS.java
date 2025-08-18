@@ -28,6 +28,7 @@ public class SyncJS extends AndroidNonvisibleComponent {
     private final WebView webView;
     private final Semaphore semaphore = new Semaphore(0);
     private String jsResult = "";
+    private String currentFunction = "";
 
     public SyncJS(ComponentContainer container) {
         super(container.$form());
@@ -95,8 +96,30 @@ public class SyncJS extends AndroidNonvisibleComponent {
 
     private class JSBridge {
         @JavascriptInterface
-        public void setResult(String result) {
-            jsResult = result;
+        public void setResult(String fnName, Object value, String type) {
+             switch (type) {
+                case "string":
+                    String strValue = (String) value;
+                    jsResult = strValue;
+                    break;
+                case "number":
+                    // JS numbers are passed as Double
+                    Double numValue = value instanceof Double ? (Double) value : null;
+                    jsResult = numValue;
+                    break;
+                case "boolean":
+                    Boolean boolValue = value instanceof Boolean ? (Boolean) value : null;
+                    jsResult = boolValue;
+                    break;
+                case "object":
+                    // JS objects come as JSON strings
+                    String jsonValue = value.toString();
+                    jsResult = jsonValue;
+                    break;
+                case "undefined":
+                    jsResult = null;
+                    break;
+            }
             semaphore.release();
         }
     }
