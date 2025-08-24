@@ -35,6 +35,8 @@ public class GeneratedExtension extends AndroidNonvisibleComponent {
         webView.getSettings().setJavaScriptEnabled(true);
         webView.setWebViewClient(new WebViewClient());
         webView.addJavascriptInterface(new JSBridge(), "AndroidBridge");
+        LoadHTML("\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Extension WebView</title>\n</head>\n<body>\n  <script src=\"src/edu/mit/appinventor/ai/conversion/assets/simpleprg95grpexample.js\">\n  </script>\n</body>\n</html>\n");
+        RunJSAndWait("window.test = new window.simpleprg95grpexample.Extension()");
     }
 
     @SimpleFunction(description = "Load HTML into the internal WebView")
@@ -77,73 +79,70 @@ public class GeneratedExtension extends AndroidNonvisibleComponent {
         try { semaphore.acquire(); } catch (InterruptedException e) {}
     }
 
+  // Helper to escape strings for JS
+  private static String escapeJSString(String s) {
+    if (s == null) return "";
+    return s.replace("\\", "\\\\").replace("\"", "\\\"");
+  }
+
+
     private class JSBridge {
         @JavascriptInterface
         public void setResult(String fnName, Object value, String type) {
             switch (type) {
-                case "string":
-                    jsResult = value != null ? value.toString() : "";
-                    break;
+                case "string": jsResult = value != null ? value.toString() : ""; break;
                 case "number":
                     if (value instanceof Double) jsResult = (Double) value;
                     else if (value instanceof Number) jsResult = ((Number) value).doubleValue();
                     else if (value != null) {
-                        try { jsResult = Double.parseDouble(value.toString()); }
-                        catch (NumberFormatException e) { jsResult = 0.0; }
-                    } else jsResult = 0.0;
+                        try { jsResult = Double.parseDouble(value.toString()); } catch (NumberFormatException e) { jsResult = 0.0; }
+                    } else { jsResult = 0.0; }
                     break;
                 case "boolean":
                     if (value instanceof Boolean) jsResult = (Boolean) value;
-                    else if (value != null) jsResult = Boolean.parseBoolean(value.toString());
-                    else jsResult = false;
+                    else jsResult = value != null && Boolean.parseBoolean(value.toString());
                     break;
-                case "object":
-                    jsResult = value;
-                    break;
-                case "undefined":
-                    jsResult = null;
-                    break;
+                case "object": jsResult = value; break;
+                case "undefined": jsResult = null; break;
             }
             semaphore.release();
         }
     }
 
     // AUTO-GENERATED METHODS FROM blocks.json
-
+    
   @SimpleFunction(description = "Wrapper for log")
-  public void Log() {
-      RunJSAndWait("log()");
+  public void Log(String value) {
+      RunJSAndWait("window.test.log(" + escapeJSString(value) + ")");
   }
 
   @SimpleFunction(description = "Wrapper for indicateMessage")
-  public void IndicateMessage() {
-      RunAsyncJS("indicateMessage()");
+  public void IndicateMessage(String value, double time) {
+      RunAsyncJS("window.test.indicateMessage(" + escapeJSString(value) + ", " + time + ")");
   }
 
   @SimpleFunction(description = "Wrapper for dummyUI")
   public void DummyUI() {
-      RunJSAndWait("dummyUI()");
+      RunJSAndWait("window.test.dummyUI()");
   }
 
   @SimpleFunction(description = "Wrapper for counterUI")
   public void CounterUI() {
-      RunJSAndWait("counterUI()");
+      RunJSAndWait("window.test.counterUI()");
   }
 
   @SimpleFunction(description = "Wrapper for colorUI")
   public void ColorUI() {
-      RunJSAndWait("colorUI()");
+      RunJSAndWait("window.test.colorUI()");
   }
 
   @SimpleFunction(description = "Wrapper for imageBlock")
-  public void ImageBlock() {
-      RunJSAndWait("imageBlock()");
+  public void ImageBlock(Object jibo) {
+      RunJSAndWait("window.test.imageBlock(" + jibo + ")");
   }
 
   @SimpleFunction(description = "Wrapper for addFive")
-  public double AddFive() {
-      Object result = RunJSAndWait_Return("addFive()");
-if (result instanceof Number) return ((Number) result).doubleValue();
-return 0.0;
+  public double AddFive(double lhs, double rhs) {
+      return (double) RunJSAndWait_Return("window.test.addFive(" + lhs + ", " + rhs + ")");
   }
 }

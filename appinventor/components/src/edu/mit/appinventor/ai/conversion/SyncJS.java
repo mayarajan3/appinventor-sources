@@ -27,7 +27,7 @@ public class SyncJS extends AndroidNonvisibleComponent {
     private final Activity activity;
     private final WebView webView;
     private final Semaphore semaphore = new Semaphore(0);
-    private String jsResult = "";
+    private Object jsResult;
     private String currentFunction = "";
 
     public SyncJS(ComponentContainer container) {
@@ -46,7 +46,7 @@ public class SyncJS extends AndroidNonvisibleComponent {
     }
 
     @SimpleFunction(description = "Call JavaScript and wait for result synchronously")
-    public String RunJSAndWait_Return(final String js) {
+    public Object RunJSAndWait_Return(final String js) {
         jsResult = "";
 
         activity.runOnUiThread(new Runnable() {

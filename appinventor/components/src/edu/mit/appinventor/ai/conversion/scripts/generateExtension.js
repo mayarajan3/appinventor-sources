@@ -1,67 +1,131 @@
 import fs from "fs";
 
+
 const blocks = JSON.parse(fs.readFileSync("blocks.json", "utf-8"));
 
-// Map JS return type to Java type and casting snippet
-function generateMethodReturnType(block) {
-  const { returns, async } = block;
+const bundleContent = fs.readFileSync("simpleprg95grpexample.js", "utf-8");
 
-  switch (returns) {
-    case "number":
-      return {
-        javaType: "double",
-        cast: `Object result = RunJSAndWait_Return("${block.name}()");
-if (result instanceof Number) return ((Number) result).doubleValue();
-return 0.0;`
-      };
-    case "boolean":
-      return {
-        javaType: "boolean",
-        cast: `Object result = RunJSAndWait_Return("${block.name}()");
-if (result instanceof Boolean) return (Boolean) result;
-return false;`
-      };
-    case "string":
-      return {
-        javaType: "String",
-        cast: `Object result = RunJSAndWait_Return("${block.name}()");
-return result != null ? result.toString() : "";`
-      };
-    case "object":
-      return {
-        javaType: "Object",
-        cast: `return RunJSAndWait_Return("${block.name}()");`
-      };
-    default:
-      return {
-        javaType: "void",
-        cast: async ? `RunAsyncJS("${block.name}()");` : `RunJSAndWait("${block.name}()");`
-      };
+const jsFileName = "src/edu/mit/appinventor/ai/conversion/assets/simpleprg95grpexample.js";
+
+// Map JSON type to Java type
+function javaType(type) {
+  switch (type) {
+    case "number": return "double";
+    case "string": return "String";
+    case "boolean": return "boolean";
+    case "undefined": return "void"; // legacy
+    case "void": return "void";      // NEW: handle proper void
+    default: return "Object"; // use Object for unknown types
   }
 }
 
+// Wrap the JS in HTML
+const htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Extension WebView</title>
+</head>
+<body>
+  <script src="${jsFileName}">
+  </script>
+</body>
+</html>
+`;
+
+
+// Generate method parameters for Java
+function generateParams(parameters = []) {
+  return parameters.map(p => `${javaType(p.type)} ${p.name}`).join(", ");
+}
+
+// Escape string for JS inside Java
+function escapeJSString(s) {
+  if (s === undefined || s === null) return '';
+  return s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
+// Generate JS call with parameters
+function generateJSCall(block) {
+    const prefix = "window.test."; // ensure all calls go through the instance
+    if (!block.parameters || block.parameters.length === 0) {
+      return `${prefix}${block.name}()`;
+    }
+  
+    const args = block.parameters.map(p => {
+      if (p.type === 'string') {
+        return '" + escapeJSString(' + p.name + ') + "';
+      }
+      return '" + ' + p.name + ' + "';
+    }).join(", ");
+  
+    return `${prefix}${block.name}(${args})`;
+  }
+
+  // Escape for Java string
+function escapeJavaString(str) {
+    return str
+      .replace(/\\/g, "\\\\")
+      .replace(/"/g, '\\"')
+      .replace(/\r?\n/g, "\\n");
+  }
+
+// Generate a single block method
 function generateBlockMethod(block) {
-  const { name } = block;
+  const { name, returns, async, parameters } = block;
+  const retType = javaType(returns);
   const methodName = name.charAt(0).toUpperCase() + name.slice(1);
-  const { javaType, cast } = generateMethodReturnType(block);
+  const paramList = generateParams(parameters);
 
-  if (javaType === "void") {
-    return `
-  @SimpleFunction(description = "Wrapper for ${name}")
-  public void ${methodName}() {
-      ${cast}
-  }`;
+  const jsCall = generateJSCall(block);
+
+
+
+  let body;
+  if (async) {
+    if (retType === "void") body = `RunAsyncJS("${jsCall}");`;
+    else body = `return (${retType}) RunJSAndWait_Return("${jsCall}");`;
   } else {
-    return `
-  @SimpleFunction(description = "Wrapper for ${name}")
-  public ${javaType} ${methodName}() {
-      ${cast}
-  }`;
+    if (retType === "void") body = `RunJSAndWait("${jsCall}");`;
+    else body = `return (${retType}) RunJSAndWait_Return("${jsCall}");`;
   }
+
+  return `
+  @SimpleFunction(description = "Wrapper for ${name}")
+  public ${retType} ${methodName}(${paramList}) {
+      ${body}
+  }`;
 }
 
+const ESCAPE_METHOD = [
+  "  // Helper to escape strings for JS",
+  "  private static String escapeJSString(String s) {",
+  "    if (s == null) return \"\";",
+  "    return s.replace(\"\\\\\", \"\\\\\\\\\").replace(\"\\\"\", \"\\\\\\\"\");",
+  "  }",
+  ""
+].join("\n");
+
+function chunkString(str, size) {
+    const chunks = [];
+    for (let i = 0; i < str.length; i += size) {
+      chunks.push(str.slice(i, i + size));
+    }
+    return chunks;
+  }
+  
+  
+
+// Generate the full extension
 function generateExtension(blocks) {
   const methods = blocks.map(generateBlockMethod).join("\n");
+
+  const escapedHTML = escapeJavaString(htmlContent);
+
+  const chunks = chunkString(htmlContent, 30000); // 30k chars per string
+    const escapedChunks = chunks.map(escapeJavaString);
+    const concatenated = escapedChunks.map(c => `"${c}"`).join(" + ");
 
   return `// AUTO-GENERATED FROM blocks.json
 // -*- mode: java; c-basic-offset: 2; -*-
@@ -100,6 +164,8 @@ public class GeneratedExtension extends AndroidNonvisibleComponent {
         webView.getSettings().setJavaScriptEnabled(true);
         webView.setWebViewClient(new WebViewClient());
         webView.addJavascriptInterface(new JSBridge(), "AndroidBridge");
+        LoadHTML(${concatenated});
+        RunJSAndWait("window.test = new window.simpleprg95grpexample.Extension()");
     }
 
     @SimpleFunction(description = "Load HTML into the internal WebView")
@@ -142,41 +208,36 @@ public class GeneratedExtension extends AndroidNonvisibleComponent {
         try { semaphore.acquire(); } catch (InterruptedException e) {}
     }
 
+${ESCAPE_METHOD}
+
     private class JSBridge {
         @JavascriptInterface
         public void setResult(String fnName, Object value, String type) {
             switch (type) {
-                case "string":
-                    jsResult = value != null ? value.toString() : "";
-                    break;
+                case "string": jsResult = value != null ? value.toString() : ""; break;
                 case "number":
                     if (value instanceof Double) jsResult = (Double) value;
                     else if (value instanceof Number) jsResult = ((Number) value).doubleValue();
                     else if (value != null) {
-                        try { jsResult = Double.parseDouble(value.toString()); }
-                        catch (NumberFormatException e) { jsResult = 0.0; }
-                    } else jsResult = 0.0;
+                        try { jsResult = Double.parseDouble(value.toString()); } catch (NumberFormatException e) { jsResult = 0.0; }
+                    } else { jsResult = 0.0; }
                     break;
                 case "boolean":
                     if (value instanceof Boolean) jsResult = (Boolean) value;
-                    else if (value != null) jsResult = Boolean.parseBoolean(value.toString());
-                    else jsResult = false;
+                    else jsResult = value != null && Boolean.parseBoolean(value.toString());
                     break;
-                case "object":
-                    jsResult = value;
-                    break;
-                case "undefined":
-                    jsResult = null;
-                    break;
+                case "object": jsResult = value; break;
+                case "undefined": jsResult = null; break;
             }
             semaphore.release();
         }
     }
 
     // AUTO-GENERATED METHODS FROM blocks.json
-${methods}
+    ${methods}
 }`;
 }
 
-fs.writeFileSync("GeneratedExtension.java", generateExtension(blocks), "utf-8");
+const javaFile = generateExtension(blocks);
+fs.writeFileSync("../GeneratedExtension.java", javaFile, "utf-8");
 console.log("✅ GeneratedExtension.java created!");

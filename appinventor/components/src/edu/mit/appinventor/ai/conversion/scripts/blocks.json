@@ -2,37 +2,75 @@
     {
       "name": "log",
       "type": "command",
-      "async": false
+      "returns": "void",
+      "async": false,
+      "parameters": [
+        {
+          "name": "value",
+          "type": "string"
+        }
+      ]
     },
     {
       "name": "indicateMessage",
       "type": "command",
-      "async": true
+      "returns": "void",
+      "async": true,
+      "parameters": [
+        {
+          "name": "value",
+          "type": "string"
+        },
+        {
+          "name": "time",
+          "type": "number"
+        }
+      ]
     },
     {
       "name": "dummyUI",
       "type": "button",
+      "returns": "void",
       "async": false
     },
     {
       "name": "counterUI",
       "type": "button",
+      "returns": "void",
       "async": false
     },
     {
       "name": "colorUI",
       "type": "button",
+      "returns": "void",
       "async": false
     },
     {
       "name": "imageBlock",
       "type": "command",
-      "async": false
+      "returns": "void",
+      "async": false,
+      "parameters": [
+        {
+          "name": "jibo",
+          "type": "object"
+        }
+      ]
     },
     {
       "name": "addFive",
       "type": "reporter",
       "returns": "number",
-      "async": false
+      "async": false,
+      "parameters": [
+        {
+          "name": "lhs",
+          "type": "number"
+        },
+        {
+          "name": "rhs",
+          "type": "number"
+        }
+      ]
     }
   ]
