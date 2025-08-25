@@ -1,9 +1,6 @@
 import fs from "fs";
 
-
 const blocks = JSON.parse(fs.readFileSync("blocks.json", "utf-8"));
-
-const bundleContent = fs.readFileSync("simpleprg95grpexample.js", "utf-8");
 
 const jsFileName1 = "src/edu/mit/appinventor/ai/conversion/assets/simpleprg95grpexample.js";
 const jsFileName2 = "src/edu/mit/appinventor/ai/conversion/assets/ExtensionFramework.js";
@@ -14,38 +11,10 @@ function javaType(type) {
     case "number": return "double";
     case "string": return "String";
     case "boolean": return "boolean";
-    case "undefined": return "void"; // legacy
-    case "void": return "void";      // NEW: handle proper void
-    default: return "Object"; // use Object for unknown types
+    case "undefined": return "void";
+    case "void": return "void";
+    default: return "Object";
   }
-}
-
-// Wrap the JS in HTML
-const htmlContent = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Extension WebView</title>
-</head>
-<body>
-  <script src="${jsFileName2}">
-  </script>
-  <script src="${jsFileName1}">
-  </script>
-  <script>
-  setTimeout(() => {
-		window.test = new window.simpleprg95grpexample.Extension();
-	}, 2000);
-  </script>
-</body>
-</html>
-`;
-
-
-// Generate method parameters for Java
-function generateParams(parameters = []) {
-  return parameters.map(p => `${javaType(p.type)} ${p.name}`).join(", ");
 }
 
 // Escape string for JS inside Java
@@ -54,16 +23,20 @@ function escapeJSString(s) {
   return s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 }
 
-// Generate JS call with parameters
+// Generate method parameters for Java
+function generateParams(parameters = []) {
+  return parameters.map(p => `${javaType(p.type)} ${p.name}`).join(", ");
+}
+
+// Generate JS call
 function generateJSCall(block) {
-    const prefix = "window.test."; // ensure all calls go through the instance
-    if (!block.parameters || block.parameters.length === 0) {
-      return `${prefix}${block.name}()`;
-    }
+    const prefix = "window.test.";
+    if (!block.parameters || block.parameters.length === 0) return `${prefix}${block.name}()`;
   
     const args = block.parameters.map(p => {
-      if (p.type === 'string') {
-        return '" + escapeJSString(' + p.name + ') + "';
+      if (p.type === "string") {
+        // Wrap in quotes so JS gets it as a string literal
+        return '\\"' + '" + escapeJSString(' + p.name + ') + "' + '\\"';
       }
       return '" + ' + p.name + ' + "';
     }).join(", ");
@@ -71,32 +44,25 @@ function generateJSCall(block) {
     return `${prefix}${block.name}(${args})`;
   }
 
-  // Escape for Java string
-function escapeJavaString(str) {
-    return str
-      .replace(/\\/g, "\\\\")
-      .replace(/"/g, '\\"')
-      .replace(/\r?\n/g, "\\n");
-  }
-
-// Generate a single block method
+// Generate a single block method with proper double/string handling
 function generateBlockMethod(block) {
   const { name, returns, async, parameters } = block;
   const retType = javaType(returns);
   const methodName = name.charAt(0).toUpperCase() + name.slice(1);
   const paramList = generateParams(parameters);
-
   const jsCall = generateJSCall(block);
 
-
-
-  let body;
+  let body = "";
   if (async) {
     if (retType === "void") body = `RunAsyncJS("${jsCall}");`;
-    else body = `return (${retType}) RunJSAndWait_Return("${jsCall}");`;
+    else if (retType === "double") body = `return RunJSAndWait_Return_double("${jsCall}");`;
+    else if (retType === "String") body = `return RunJSAndWait_Return_string("${jsCall}");`;
+    else body = `return RunJSAndWait_Return("${jsCall}");`;
   } else {
     if (retType === "void") body = `RunJSAndWait("${jsCall}");`;
-    else body = `return (${retType}) RunJSAndWait_Return("${jsCall}");`;
+    else if (retType === "double") body = `return RunJSAndWait_Return_double("${jsCall}");`;
+    else if (retType === "String") body = `return RunJSAndWait_Return_string("${jsCall}");`;
+    else body = `return RunJSAndWait_Return("${jsCall}");`;
   }
 
   return `
@@ -106,34 +72,41 @@ function generateBlockMethod(block) {
   }`;
 }
 
-const ESCAPE_METHOD = [
-  "  // Helper to escape strings for JS",
-  "  private static String escapeJSString(String s) {",
-  "    if (s == null) return \"\";",
-  "    return s.replace(\"\\\\\", \"\\\\\\\\\").replace(\"\\\"\", \"\\\\\\\"\");",
-  "  }",
-  ""
-].join("\n");
+// Escape HTML for Java string
+function escapeJavaString(str) {
+  return str.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\r?\n/g, "\\n");
+}
 
 function chunkString(str, size) {
-    const chunks = [];
-    for (let i = 0; i < str.length; i += size) {
-      chunks.push(str.slice(i, i + size));
-    }
-    return chunks;
+  const chunks = [];
+  for (let i = 0; i < str.length; i += size) {
+    chunks.push(str.slice(i, i + size));
   }
-  
-  
+  return chunks;
+}
 
-// Generate the full extension
+// Wrap JS in HTML
+const htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Extension WebView</title>
+</head>
+<body>
+  <script src="${jsFileName2}"></script>
+  <script src="${jsFileName1}"></script>
+  <script>
+    setTimeout(() => { window.test = new window.simpleprg95grpexample.Extension(); }, 2000);
+  </script>
+</body>
+</html>
+`;
+
 function generateExtension(blocks) {
   const methods = blocks.map(generateBlockMethod).join("\n");
-
-  const escapedHTML = escapeJavaString(htmlContent);
-
-  const chunks = chunkString(htmlContent, 30000); // 30k chars per string
-    const escapedChunks = chunks.map(escapeJavaString);
-    const concatenated = escapedChunks.map(c => `"${c}"`).join(" + ");
+  const chunks = chunkString(htmlContent, 30000);
+  const concatenated = chunks.map(escapeJavaString).map(c => `"${c}"`).join(" + ");
 
   return `// AUTO-GENERATED FROM blocks.json
 // -*- mode: java; c-basic-offset: 2; -*-
@@ -161,7 +134,8 @@ public class GeneratedExtension extends AndroidNonvisibleComponent {
     private final Activity activity;
     private final WebView webView;
     private final Semaphore semaphore = new Semaphore(0);
-    private Object jsResult;
+    private double jsResult_double;
+    private String jsResult_string;
     private String currentFunction = "";
 
     public GeneratedExtension(ComponentContainer container) {
@@ -173,7 +147,6 @@ public class GeneratedExtension extends AndroidNonvisibleComponent {
         webView.setWebViewClient(new WebViewClient());
         webView.addJavascriptInterface(new JSBridge(), "AndroidBridge");
         LoadHTML(${concatenated});
-        RunAsyncJS("window.test = new window.simpleprg95grpexample.Extension()");
     }
 
     @SimpleFunction(description = "Load HTML into the internal WebView")
@@ -181,62 +154,66 @@ public class GeneratedExtension extends AndroidNonvisibleComponent {
         webView.loadDataWithBaseURL(null, html, "text/html", "utf-8", null);
     }
 
-    @SimpleFunction(description = "Call JavaScript and wait for result synchronously")
-    public Object RunJSAndWait_Return(final String js) {
-        jsResult = null;
+    @SimpleFunction(description = "Call JS and wait for double")
+    public double RunJSAndWait_Return_double(final String js) {
+        jsResult_double = -1;
         activity.runOnUiThread(new Runnable() {
             @Override
-            public void run() {
-                webView.evaluateJavascript(js, null);
-            }
+            public void run() { webView.evaluateJavascript(js, null); }
         });
-        try { semaphore.acquire(); } catch (InterruptedException e) { return null; }
-        return jsResult;
+        try { semaphore.acquire(); } catch (InterruptedException e) { return -1; }
+        return jsResult_double;
     }
 
-    @SimpleFunction(description = "Run JavaScript asynchronously without waiting for result")
+    @SimpleFunction(description = "Call JS and wait for string")
+    public String RunJSAndWait_Return_string(final String js) {
+        jsResult_string = "";
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() { webView.evaluateJavascript(js, null); }
+        });
+        try { semaphore.acquire(); } catch (InterruptedException e) { return ""; }
+        return jsResult_string;
+    }
+
+    @SimpleFunction(description = "Run JS asynchronously")
     public void RunAsyncJS(final String js) {
         activity.runOnUiThread(new Runnable() {
             @Override
-            public void run() {
-                webView.evaluateJavascript(js, null);
-            }
+            public void run() { webView.evaluateJavascript(js, null); }
         });
     }
 
-    @SimpleFunction(description = "Run JavaScript and wait for it to finish (no return value)")
+    @SimpleFunction(description = "Run JS and wait (no return)")
     public void RunJSAndWait(final String js) {
-        jsResult = null;
+        jsResult_double = 0.0;
         activity.runOnUiThread(new Runnable() {
             @Override
-            public void run() {
-                webView.evaluateJavascript(js, null);
-            }
+            public void run() { webView.evaluateJavascript(js, null); }
         });
         try { semaphore.acquire(); } catch (InterruptedException e) {}
     }
 
-${ESCAPE_METHOD}
+    private static String escapeJSString(String s) {
+        if (s == null) return "";
+        return s.replace("\\\\", "\\\\\\\\").replace("\\\"", "\\\\\\\"");
+    }
 
     private class JSBridge {
         @JavascriptInterface
+        public void setResult_double(String fnName, double value, String type) {
+            jsResult_double = value;
+            semaphore.release();
+        }
+
+        @JavascriptInterface
+        public void setResult_string(String fnName, String value, String type) {
+            jsResult_string = value;
+            semaphore.release();
+        }
+
+        @JavascriptInterface
         public void setResult(String fnName, Object value, String type) {
-            switch (type) {
-                case "string": jsResult = value != null ? value.toString() : ""; break;
-                case "number":
-                    if (value instanceof Double) jsResult = (Double) value;
-                    else if (value instanceof Number) jsResult = ((Number) value).doubleValue();
-                    else if (value != null) {
-                        try { jsResult = Double.parseDouble(value.toString()); } catch (NumberFormatException e) { jsResult = 0.0; }
-                    } else { jsResult = 0.0; }
-                    break;
-                case "boolean":
-                    if (value instanceof Boolean) jsResult = (Boolean) value;
-                    else jsResult = value != null && Boolean.parseBoolean(value.toString());
-                    break;
-                case "object": jsResult = value; break;
-                case "undefined": jsResult = null; break;
-            }
             semaphore.release();
         }
     }
