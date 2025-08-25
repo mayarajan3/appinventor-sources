@@ -5,7 +5,8 @@ const blocks = JSON.parse(fs.readFileSync("blocks.json", "utf-8"));
 
 const bundleContent = fs.readFileSync("simpleprg95grpexample.js", "utf-8");
 
-const jsFileName = "src/edu/mit/appinventor/ai/conversion/assets/simpleprg95grpexample.js";
+const jsFileName1 = "src/edu/mit/appinventor/ai/conversion/assets/simpleprg95grpexample.js";
+const jsFileName2 = "src/edu/mit/appinventor/ai/conversion/assets/ExtensionFramework.js";
 
 // Map JSON type to Java type
 function javaType(type) {
@@ -28,7 +29,14 @@ const htmlContent = `
   <title>Extension WebView</title>
 </head>
 <body>
-  <script src="${jsFileName}">
+  <script src="${jsFileName2}">
+  </script>
+  <script src="${jsFileName1}">
+  </script>
+  <script>
+  setTimeout(() => {
+		window.test = new window.simpleprg95grpexample.Extension();
+	}, 2000);
   </script>
 </body>
 </html>
@@ -129,7 +137,7 @@ function generateExtension(blocks) {
 
   return `// AUTO-GENERATED FROM blocks.json
 // -*- mode: java; c-basic-offset: 2; -*-
-package edu.mit.appinventor.ai.generated;
+package edu.mit.appinventor.ai.conversion;
 
 import android.app.Activity;
 import android.webkit.JavascriptInterface;
@@ -165,7 +173,7 @@ public class GeneratedExtension extends AndroidNonvisibleComponent {
         webView.setWebViewClient(new WebViewClient());
         webView.addJavascriptInterface(new JSBridge(), "AndroidBridge");
         LoadHTML(${concatenated});
-        RunJSAndWait("window.test = new window.simpleprg95grpexample.Extension()");
+        RunAsyncJS("window.test = new window.simpleprg95grpexample.Extension()");
     }
 
     @SimpleFunction(description = "Load HTML into the internal WebView")
