@@ -1,6 +1,6 @@
 // AUTO-GENERATED FROM blocks.json
 // -*- mode: java; c-basic-offset: 2; -*-
-package edu.mit.appinventor.ai.generated;
+package edu.mit.appinventor.ai.conversion;
 
 import android.app.Activity;
 import android.webkit.JavascriptInterface;
@@ -24,7 +24,8 @@ public class GeneratedExtension extends AndroidNonvisibleComponent {
     private final Activity activity;
     private final WebView webView;
     private final Semaphore semaphore = new Semaphore(0);
-    private Object jsResult;
+    private double jsResult_double;
+    private String jsResult_string;
     private String currentFunction = "";
 
     public GeneratedExtension(ComponentContainer container) {
@@ -35,8 +36,8 @@ public class GeneratedExtension extends AndroidNonvisibleComponent {
         webView.getSettings().setJavaScriptEnabled(true);
         webView.setWebViewClient(new WebViewClient());
         webView.addJavascriptInterface(new JSBridge(), "AndroidBridge");
-        LoadHTML("\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Extension WebView</title>\n</head>\n<body>\n  <script src=\"src/edu/mit/appinventor/ai/conversion/assets/simpleprg95grpexample.js\">\n  </script>\n</body>\n</html>\n");
-        RunJSAndWait("window.test = new window.simpleprg95grpexample.Extension()");
+        // LoadHTML("\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Extension WebView</title>\n</head>\n<body>\n  <script src=\"src/edu/mit/appinventor/ai/conversion/assets/ExtensionFramework.js\">\n  </script>\n  <script src=\"src/edu/mit/appinventor/ai/conversion/assets/simpleprg95grpexample.js\">\n  </script>\n  <script>\n  setTimeout(() => {\n		window.test = new window.simpleprg95grpexample.Extension();\n	}, 2000);\n  </script>\n</body>\n</html>\n");
+        // RunAsyncJS("window.test = new window.simpleprg95grpexample.Extension()");
     }
 
     @SimpleFunction(description = "Load HTML into the internal WebView")
@@ -44,17 +45,33 @@ public class GeneratedExtension extends AndroidNonvisibleComponent {
         webView.loadDataWithBaseURL(null, html, "text/html", "utf-8", null);
     }
 
+    // TODO:
+    // Make a version of this for string
+
     @SimpleFunction(description = "Call JavaScript and wait for result synchronously")
-    public Object RunJSAndWait_Return(final String js) {
-        jsResult = null;
+    public double RunJSAndWait_Return_double(final String js) {
+        jsResult_double = -1;
         activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 webView.evaluateJavascript(js, null);
             }
         });
-        try { semaphore.acquire(); } catch (InterruptedException e) { return null; }
-        return jsResult;
+        try { semaphore.acquire(); } catch (InterruptedException e) { return -1; }
+        return jsResult_double;
+    }
+
+        @SimpleFunction(description = "Call JavaScript and wait for result synchronously")
+    public String RunJSAndWait_Return_string(final String js) {
+        jsResult_string = "";
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                webView.evaluateJavascript(js, null);
+            }
+        });
+        try { semaphore.acquire(); } catch (InterruptedException e) { return ""; }
+        return jsResult_string;
     }
 
     @SimpleFunction(description = "Run JavaScript asynchronously without waiting for result")
@@ -69,7 +86,7 @@ public class GeneratedExtension extends AndroidNonvisibleComponent {
 
     @SimpleFunction(description = "Run JavaScript and wait for it to finish (no return value)")
     public void RunJSAndWait(final String js) {
-        jsResult = null;
+        jsResult_double = 0.0;
         activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -79,6 +96,18 @@ public class GeneratedExtension extends AndroidNonvisibleComponent {
         try { semaphore.acquire(); } catch (InterruptedException e) {}
     }
 
+    // @SimpleFunction(description = "Run JavaScript and wait for it to finish (no return value)")
+    // public void RunJSAndWait_string(final String js) {
+    //     jsResult_string = "";
+    //     activity.runOnUiThread(new Runnable() {
+    //         @Override
+    //         public void run() {
+    //             webView.evaluateJavascript(js, null);
+    //         }
+    //     });
+    //     try { semaphore.acquire(); } catch (InterruptedException e) {}
+    // }
+
   // Helper to escape strings for JS
   private static String escapeJSString(String s) {
     if (s == null) return "";
@@ -86,25 +115,22 @@ public class GeneratedExtension extends AndroidNonvisibleComponent {
   }
 
 
+// TODO: Add setResult for string, use a different jsResult value
     private class JSBridge {
         @JavascriptInterface
+        public void setResult_double(String fnName, double value, String type) {
+            jsResult_double = value;
+            semaphore.release();
+        }
+
+        @JavascriptInterface
+        public void setResult_string(String fnName, String value, String type) {
+            jsResult_string = value;
+            semaphore.release();
+        }
+
+        @JavascriptInterface
         public void setResult(String fnName, Object value, String type) {
-            switch (type) {
-                case "string": jsResult = value != null ? value.toString() : ""; break;
-                case "number":
-                    if (value instanceof Double) jsResult = (Double) value;
-                    else if (value instanceof Number) jsResult = ((Number) value).doubleValue();
-                    else if (value != null) {
-                        try { jsResult = Double.parseDouble(value.toString()); } catch (NumberFormatException e) { jsResult = 0.0; }
-                    } else { jsResult = 0.0; }
-                    break;
-                case "boolean":
-                    if (value instanceof Boolean) jsResult = (Boolean) value;
-                    else jsResult = value != null && Boolean.parseBoolean(value.toString());
-                    break;
-                case "object": jsResult = value; break;
-                case "undefined": jsResult = null; break;
-            }
             semaphore.release();
         }
     }
@@ -141,8 +167,21 @@ public class GeneratedExtension extends AndroidNonvisibleComponent {
       RunJSAndWait("window.test.imageBlock(" + jibo + ")");
   }
 
+  @SimpleFunction(description = "Wrapper for giveString")
+  public Object GiveString(String jibo) {
+      return RunJSAndWait_Return_string("window.test.giveString(\"" + escapeJSString(jibo) + "\")");
+  }
+
   @SimpleFunction(description = "Wrapper for addFive")
   public double AddFive(double lhs, double rhs) {
-      return (double) RunJSAndWait_Return("window.test.addFive(" + lhs + ", " + rhs + ")");
+
+    double value = RunJSAndWait_Return_double("window.test.addFive(" + lhs + ", " + rhs + ")");
+    // double result = 0;
+    //      if (value instanceof Double) result = (Double) value;
+    //     else if (value instanceof Number) result = ((Number) value).doubleValue();
+    //     else  {
+    //         try { result = Double.parseDouble(value.toString()); } catch (NumberFormatException e) { result = 0.0; }
+    //     }
+      return value;
   }
 }
