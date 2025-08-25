@@ -58,6 +58,18 @@
       ]
     },
     {
+      "name": "giveString",
+      "type": "reporter",
+      "returns": "string",
+      "async": false,
+      "parameters": [
+        {
+          "name": "jibo",
+          "type": "string"
+        }
+      ]
+    },
+    {
       "name": "addFive",
       "type": "reporter",
       "returns": "number",
