@@ -52,7 +52,7 @@ function generateJSCall(block) {
     const args = block.parameters.map(p => {
       if (p.type === "string") {
         // Wrap in quotes so JS gets it as a string literal
-        return '\\"' + ' + escapeJSString(' + p.name + ') + ' + '\\"';
+        return '\\""' + ' + ' + p.name + ' + ' + '"\\"';
       }
       return '\\"" + ' + p.name + ' + "\\"';
     }).join(", ");
@@ -157,6 +157,18 @@ import com.google.appinventor.components.annotations.*;
 import com.google.appinventor.components.common.ComponentCategory;
 import com.google.appinventor.components.runtime.*;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import android.util.Log;
+
+import android.app.Activity;
+import android.webkit.JavascriptInterface;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.webkit.WebSettings;
+import android.webkit.WebChromeClient;
+import java.util.concurrent.Semaphore;
+
 @DesignerComponent(
         version = 1,
         description = "Auto-generated wrapper around Scratch extension",
@@ -182,10 +194,12 @@ public class GeneratedExtension extends AndroidNonvisibleComponent {
         webView = new WebView(activity);
         webView.getSettings().setJavaScriptEnabled(true);
         webView.setWebViewClient(new WebViewClient());
+        webView.setWebChromeClient(new WebChromeClient() {});
         webView.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
         webView.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
         webView.setWebContentsDebuggingEnabled(true);
         webView.addJavascriptInterface(new JSBridge(), "AndroidBridge");
+        webView.getSettings().setAllowFileAccess(true);
         try {
             webView.loadUrl(form.getAssetPathForExtension(GeneratedExtension.this, "scratch3prg95grpjibo.html"));
         } catch (Exception e) {
