@@ -2,10 +2,14 @@
 // -*- mode: java; c-basic-offset: 2; -*-
 package edu.mit.appinventor.ai.conversion;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import android.app.Activity;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.WebSettings;
 import java.util.concurrent.Semaphore;
 
 import com.google.appinventor.components.annotations.*;
@@ -19,10 +23,12 @@ import com.google.appinventor.components.runtime.*;
         nonVisible = true,
         iconName = "")
 @SimpleObject(external = true)
+@UsesAssets(fileNames = "scratch3prg95grpjibo.html")
 public class GeneratedExtension extends AndroidNonvisibleComponent {
 
     private final Activity activity;
     private final WebView webView;
+    private static final Logger LOG = Logger.getLogger(GeneratedExtension.class.getName());
     private final Semaphore semaphore = new Semaphore(0);
     private double jsResult_double;
     private String jsResult_string;
@@ -35,8 +41,37 @@ public class GeneratedExtension extends AndroidNonvisibleComponent {
         webView = new WebView(activity);
         webView.getSettings().setJavaScriptEnabled(true);
         webView.setWebViewClient(new WebViewClient());
+        webView.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
+        webView.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        webView.setWebContentsDebuggingEnabled(true);
         webView.addJavascriptInterface(new JSBridge(), "AndroidBridge");
-        LoadHTML("\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Extension WebView</title>\n</head>\n<body>\n  <script src=\"src/edu/mit/appinventor/ai/conversion/assets/ExtensionFramework.js\"></script>\n  <script src=\"src/edu/mit/appinventor/ai/conversion/assets/simpleprg95grpexample.js\"></script>\n  <script>\n    setTimeout(() => { window.test = new window.simpleprg95grpexample.Extension(); }, 2000);\n  </script>\n</body>\n</html>\n");
+        try {
+            webView.loadUrl(form.getAssetPathForExtension(GeneratedExtension.this, "scratch3prg95grpjibo.html"));
+        } catch (Exception e) {
+            LOG.log(Level.SEVERE, "Error loading teachable_machine.html", e);
+        }
+        // 
+        //     webView.loadUrl("http://localhost/scratch3prg95grpjibo.html");
+        // } catch (Exception e) {
+        //     LOG.log(Level.SEVERE, "Error loading teachable_machine.html", e);
+        // }
+    }
+
+
+
+    @SimpleFunction(description = "Load HTML from assets")
+    public void loadHTMLFromAssets(String filename) {
+        try {
+            String html = "";
+            java.io.InputStream is = activity.getAssets().open(filename);
+            java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(is));
+            String line;
+            while ((line = reader.readLine()) != null) html += line + "\n";
+            reader.close();
+            webView.loadDataWithBaseURL(null, html, "text/html", "utf-8", null);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @SimpleFunction(description = "Load HTML into the internal WebView")
@@ -110,43 +145,63 @@ public class GeneratedExtension extends AndroidNonvisibleComponent {
 
     // AUTO-GENERATED METHODS FROM blocks.json
     
-  @SimpleFunction(description = "Wrapper for log")
-  public void Log(String value) {
-      RunJSAndWait("window.test.log(\"" + escapeJSString(value) + "\")");
+  @SimpleFunction(description = "Wrapper for JiboButton")
+  public void JiboButton() {
+      RunJSAndWait("window.test.JiboButton()");
   }
 
-  @SimpleFunction(description = "Wrapper for indicateMessage")
-  public void IndicateMessage(String value, double time) {
-      RunAsyncJS("window.test.indicateMessage(\"" + escapeJSString(value) + "\", " + time + ")");
+  @SimpleFunction(description = "Wrapper for SetJiboName")
+  public void SetJiboName(String name) {
+      RunJSAndWait("window.test.SetJiboName(\" + escapeJSString(name) + \")");
   }
 
-  @SimpleFunction(description = "Wrapper for dummyUI")
-  public void DummyUI() {
-      RunJSAndWait("window.test.dummyUI()");
+  @SimpleFunction(description = "Wrapper for JiboTTS")
+  public void JiboTTS(String text) {
+      RunJSAndWait("window.test.JiboTTS(\" + escapeJSString(text) + \")");
   }
 
-  @SimpleFunction(description = "Wrapper for counterUI")
-  public void CounterUI() {
-      RunJSAndWait("window.test.counterUI()");
+  @SimpleFunction(description = "Wrapper for JiboAsk")
+  public void JiboAsk(String text) {
+      RunJSAndWait("window.test.JiboAsk(\" + escapeJSString(text) + \")");
   }
 
-  @SimpleFunction(description = "Wrapper for colorUI")
-  public void ColorUI() {
-      RunJSAndWait("window.test.colorUI()");
+  @SimpleFunction(description = "Wrapper for JiboListen")
+  public void JiboListen() {
+      RunJSAndWait("window.test.JiboListen()");
   }
 
-  @SimpleFunction(description = "Wrapper for imageBlock")
-  public void ImageBlock(Object jibo) {
-      RunJSAndWait("window.test.imageBlock(" + jibo + ")");
+  @SimpleFunction(description = "Wrapper for JiboDance")
+  public void JiboDance(String dance) {
+      RunJSAndWait("window.test.JiboDance(\" + escapeJSString(dance) + \")");
   }
 
-  @SimpleFunction(description = "Wrapper for giveString")
-  public String GiveString(String jibo) {
-      return RunJSAndWait_Return_string("window.test.giveString(\"" + escapeJSString(jibo) + "\")");
+  @SimpleFunction(description = "Wrapper for JiboAudio")
+  public void JiboAudio(String audio) {
+      RunJSAndWait("window.test.JiboAudio(\" + escapeJSString(audio) + \")");
   }
 
-  @SimpleFunction(description = "Wrapper for addFive")
-  public double AddFive(double lhs, double rhs) {
-      return RunJSAndWait_Return_double("window.test.addFive(" + lhs + ", " + rhs + ")");
+  @SimpleFunction(description = "Wrapper for JiboVolume")
+  public void JiboVolume(String volume) {
+      RunJSAndWait("window.test.JiboVolume(\" + escapeJSString(volume) + \")");
+  }
+
+  @SimpleFunction(description = "Wrapper for JiboEmote")
+  public void JiboEmote(String anim) {
+      RunJSAndWait("window.test.JiboEmote(\" + escapeJSString(anim) + \")");
+  }
+
+  @SimpleFunction(description = "Wrapper for JiboIcon")
+  public void JiboIcon(String icon) {
+      RunJSAndWait("window.test.JiboIcon(\" + escapeJSString(icon) + \")");
+  }
+
+  @SimpleFunction(description = "Wrapper for JiboLED")
+  public void JiboLED(String color) {
+      RunJSAndWait("window.test.JiboLED(\" + escapeJSString(color) + \")");
+  }
+
+  @SimpleFunction(description = "Wrapper for JiboLook")
+  public void JiboLook(String dir) {
+      RunJSAndWait("window.test.JiboLook(\" + escapeJSString(dir) + \")");
   }
 }

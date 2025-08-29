@@ -1,9 +1,19 @@
 import fs from "fs";
+import path from "path";
 
 const blocks = JSON.parse(fs.readFileSync("blocks.json", "utf-8"));
 
-const jsFileName1 = "src/edu/mit/appinventor/ai/conversion/assets/simpleprg95grpexample.js";
-const jsFileName2 = "src/edu/mit/appinventor/ai/conversion/assets/ExtensionFramework.js";
+const assetsDir = "src/edu/mit/appinventor/ai/conversion/assets";
+if (!fs.existsSync(assetsDir)) fs.mkdirSync(assetsDir, { recursive: true });
+
+
+const htmlFileName = path.join(assetsDir, "scratch3prg95grpjibo.html");
+const jsFileName1 = "ExtensionFramework.js";
+const jsFileName2 = "scratch3prg95grpjibo.js";
+
+
+// const jsFileName1 = "src/edu/mit/appinventor/ai/conversion/assets/simpleprg95grpexample.js";
+// const jsFileName2 = "src/edu/mit/appinventor/ai/conversion/assets/ExtensionFramework.js";
 
 // Map JSON type to Java type
 function javaType(type) {
@@ -16,6 +26,12 @@ function javaType(type) {
     default: return "Object";
   }
 }
+
+function escapeNewlines(input) {
+    if (input == null) return null;
+        return input
+            .replace("\n", "\\n");   // escape newline
+    }
 
 // Escape string for JS inside Java
 function escapeJSString(s) {
@@ -36,9 +52,9 @@ function generateJSCall(block) {
     const args = block.parameters.map(p => {
       if (p.type === "string") {
         // Wrap in quotes so JS gets it as a string literal
-        return '\\"' + '" + escapeJSString(' + p.name + ') + "' + '\\"';
+        return '\\"' + ' + escapeJSString(' + p.name + ') + ' + '\\"';
       }
-      return '" + ' + p.name + ' + "';
+      return '\\"" + ' + p.name + ' + "\\"';
     }).join(", ");
   
     return `${prefix}${block.name}(${args})`;
@@ -77,45 +93,64 @@ function escapeJavaString(str) {
   return str.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\r?\n/g, "\\n");
 }
 
-function chunkString(str, size) {
-  const chunks = [];
-  for (let i = 0; i < str.length; i += size) {
-    chunks.push(str.slice(i, i + size));
-  }
-  return chunks;
-}
+// function chunkString(str, size) {
+//   const chunks = [];
+//   for (let i = 0; i < str.length; i += size) {
+//     chunks.push(str.slice(i, i + size));
+//   }
+//   return chunks;
+// }
 
-// Wrap JS in HTML
+const content1 = fs.readFileSync(jsFileName1, "utf-8");
+const content2 = fs.readFileSync(jsFileName2, "utf-8");
+
 const htmlContent = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Extension WebView</title>
+<meta charset="UTF-8">
+<title>Extension WebView</title>
 </head>
 <body>
-  <script src="${jsFileName2}"></script>
-  <script src="${jsFileName1}"></script>
-  <script>
-    setTimeout(() => { window.test = new window.simpleprg95grpexample.Extension(); }, 2000);
-  </script>
+<script>${content1}</script>
+<script>${content2}</script>
+<script>
+setTimeout(() => { window.test = new window.scratch3prg95grpjibo.Extension(); }, 2000);
+</script>
 </body>
 </html>
 `;
 
+function chunkString(str, size) {
+    const chunks = [];
+    for (let i = 0; i < str.length; i += size) {
+      chunks.push(str.slice(i, i + size));
+    }
+    return chunks;
+  }
+  
+
+
 function generateExtension(blocks) {
   const methods = blocks.map(generateBlockMethod).join("\n");
-  const chunks = chunkString(htmlContent, 30000);
-  const concatenated = chunks.map(escapeJavaString).map(c => `"${c}"`).join(" + ");
+  const chunks = chunkString(htmlContent, 8000);
+const javaChunks = chunks.map(escapeJavaString);
+const javaString = javaChunks.map(c => `"${c}"`).join(" + \n");
+
+// Join as concatenated Java string
 
   return `// AUTO-GENERATED FROM blocks.json
 // -*- mode: java; c-basic-offset: 2; -*-
 package edu.mit.appinventor.ai.conversion;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import android.app.Activity;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.WebSettings;
 import java.util.concurrent.Semaphore;
 
 import com.google.appinventor.components.annotations.*;
@@ -129,10 +164,12 @@ import com.google.appinventor.components.runtime.*;
         nonVisible = true,
         iconName = "")
 @SimpleObject(external = true)
+@UsesAssets(fileNames = "scratch3prg95grpjibo.html")
 public class GeneratedExtension extends AndroidNonvisibleComponent {
 
     private final Activity activity;
     private final WebView webView;
+    private static final Logger LOG = Logger.getLogger(GeneratedExtension.class.getName());
     private final Semaphore semaphore = new Semaphore(0);
     private double jsResult_double;
     private String jsResult_string;
@@ -145,8 +182,30 @@ public class GeneratedExtension extends AndroidNonvisibleComponent {
         webView = new WebView(activity);
         webView.getSettings().setJavaScriptEnabled(true);
         webView.setWebViewClient(new WebViewClient());
+        webView.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
+        webView.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        webView.setWebContentsDebuggingEnabled(true);
         webView.addJavascriptInterface(new JSBridge(), "AndroidBridge");
-        LoadHTML(${concatenated});
+        try {
+            webView.loadUrl(form.getAssetPathForExtension(GeneratedExtension.this, "scratch3prg95grpjibo.html"));
+        } catch (Exception e) {
+            LOG.log(Level.SEVERE, "Error loading teachable_machine.html", e);
+        }
+    }
+
+    @SimpleFunction(description = "Load HTML from assets")
+    public void loadHTMLFromAssets(String filename) {
+        try {
+            String html = "";
+            java.io.InputStream is = activity.getAssets().open(filename);
+            java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(is));
+            String line;
+            while ((line = reader.readLine()) != null) html += line + "\\n";
+            reader.close();
+            webView.loadDataWithBaseURL(null, html, "text/html", "utf-8", null);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @SimpleFunction(description = "Load HTML into the internal WebView")

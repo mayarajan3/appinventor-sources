@@ -1,88 +1,120 @@
 [
-    {
-      "name": "log",
-      "type": "command",
-      "returns": "void",
-      "async": false,
-      "parameters": [
-        {
-          "name": "value",
-          "type": "string"
-        }
-      ]
-    },
-    {
-      "name": "indicateMessage",
-      "type": "command",
-      "returns": "void",
-      "async": true,
-      "parameters": [
-        {
-          "name": "value",
-          "type": "string"
-        },
-        {
-          "name": "time",
-          "type": "number"
-        }
-      ]
-    },
-    {
-      "name": "dummyUI",
-      "type": "button",
-      "returns": "void",
-      "async": false
-    },
-    {
-      "name": "counterUI",
-      "type": "button",
-      "returns": "void",
-      "async": false
-    },
-    {
-      "name": "colorUI",
-      "type": "button",
-      "returns": "void",
-      "async": false
-    },
-    {
-      "name": "imageBlock",
-      "type": "command",
-      "returns": "void",
-      "async": false,
-      "parameters": [
-        {
-          "name": "jibo",
-          "type": "object"
-        }
-      ]
-    },
-    {
-      "name": "giveString",
-      "type": "reporter",
-      "returns": "string",
-      "async": false,
-      "parameters": [
-        {
-          "name": "jibo",
-          "type": "string"
-        }
-      ]
-    },
-    {
-      "name": "addFive",
-      "type": "reporter",
-      "returns": "number",
-      "async": false,
-      "parameters": [
-        {
-          "name": "lhs",
-          "type": "number"
-        },
-        {
-          "name": "rhs",
-          "type": "number"
-        }
-      ]
-    }
-  ]
+      {
+        "name": "JiboButton",
+        "type": "command",
+        "returns": "void",
+        "async": false,
+        "description": "Connect or disconnect Jibo",
+        "parameters": []
+      },
+      {
+        "name": "SetJiboName",
+        "type": "command",
+        "returns": "void",
+        "async": false,
+        "description": "Connect or disconnect Jibo",
+        "parameters": [
+            { "name": "name", "type": "string" }
+        ]
+      },
+      {
+        "name": "JiboTTS",
+        "type": "command",
+        "returns": "void",
+        "async": false,
+        "description": "Make Jibo speak text",
+        "parameters": [
+          { "name": "text", "type": "string" }
+        ]
+      },
+      {
+        "name": "JiboAsk",
+        "type": "command",
+        "returns": "void",
+        "async": false,
+        "description": "Ask Jibo a question and wait for response",
+        "parameters": [
+          { "name": "text", "type": "string" }
+        ]
+      },
+      {
+        "name": "JiboListen",
+        "type": "reporter",
+        "returns": "void",
+        "async": false,
+        "description": "Get the last answer Jibo heard",
+        "parameters": [],
+        "return": "string"
+      },
+      {
+        "name": "JiboDance",
+        "type": "command",
+        "returns": "void",
+        "description": "Play a Jibo dance",
+        "async": false,
+        "parameters": [
+          { "name": "dance", "type": "string" }
+        ]
+      },
+      {
+        "name": "JiboAudio",
+        "type": "command",
+        "returns": "void",
+        "async": false,
+        "description": "Play a Jibo audio clip",
+        "parameters": [
+          { "name": "audio", "type": "string" }
+        ]
+      },
+      {
+        "name": "JiboVolume",
+        "type": "command",
+        "returns": "void",
+        "async": false,
+        "description": "Set Jibo volume",
+        "parameters": [
+          { "name": "volume", "type": "string" }
+        ]
+      },
+      {
+        "name": "JiboEmote",
+        "type": "command",
+        "returns": "void",
+        "async": false,
+        "description": "Play a Jibo emotion animation",
+        "parameters": [
+          { "name": "anim", "type": "string" }
+        ]
+      },
+      {
+        "name": "JiboIcon",
+        "type": "command",
+        "returns": "void",
+        "async": false,
+        "description": "Show a Jibo icon",
+        "parameters": [
+          { "name": "icon", "type": "string" }
+        ]
+      },
+      {
+        "name": "JiboLED",
+        "type": "command",
+        "returns": "void",
+        "async": false,
+        "description": "Set Jibo LED color",
+        "parameters": [
+          { "name": "color", "type": "string" }
+        ]
+      },
+      {
+        "name": "JiboLook",
+        "type": "command",
+        "returns": "void",
+        "async": false,
+        "description": "Make Jibo look in a direction",
+        "parameters": [
+          { "name": "dir", "type": "string" }
+        ]
+      }
+]
+  

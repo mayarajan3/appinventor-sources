@@ -27,7 +27,7 @@ public class SyncJS extends AndroidNonvisibleComponent {
     private final Activity activity;
     private final WebView webView;
     private final Semaphore semaphore = new Semaphore(0);
-    private Object jsResult;
+    private String jsResult = "";
     private String currentFunction = "";
 
     public SyncJS(ComponentContainer container) {
@@ -46,9 +46,10 @@ public class SyncJS extends AndroidNonvisibleComponent {
     }
 
     @SimpleFunction(description = "Call JavaScript and wait for result synchronously")
-    public Object RunJSAndWait_Return(final String js) {
+    public String RunJSAndWait_Return(final String js) {
         jsResult = "";
 
+        // Wll need
         activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -96,30 +97,8 @@ public class SyncJS extends AndroidNonvisibleComponent {
 
     private class JSBridge {
         @JavascriptInterface
-        public void setResult(String fnName, Object value, String type) {
-             switch (type) {
-                case "string":
-                    String strValue = (String) value;
-                    jsResult = strValue;
-                    break;
-                case "number":
-                    // JS numbers are passed as Double
-                    Double numValue = value instanceof Double ? (Double) value : null;
-                    jsResult = numValue;
-                    break;
-                case "boolean":
-                    Boolean boolValue = value instanceof Boolean ? (Boolean) value : null;
-                    jsResult = boolValue;
-                    break;
-                case "object":
-                    // JS objects come as JSON strings
-                    String jsonValue = value.toString();
-                    jsResult = jsonValue;
-                    break;
-                case "undefined":
-                    jsResult = null;
-                    break;
-            }
+        public void setResult(String result) {
+            jsResult = result;
             semaphore.release();
         }
     }
