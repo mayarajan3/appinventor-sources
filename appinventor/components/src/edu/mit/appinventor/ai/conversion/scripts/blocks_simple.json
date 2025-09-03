@@ -1,0 +1,88 @@
+[
+    {
+      "name": "log",
+      "type": "command",
+      "returns": "void",
+      "async": false,
+      "parameters": [
+        {
+          "name": "value",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "indicateMessage",
+      "type": "command",
+      "returns": "void",
+      "async": true,
+      "parameters": [
+        {
+          "name": "value",
+          "type": "string"
+        },
+        {
+          "name": "time",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "name": "dummyUI",
+      "type": "button",
+      "returns": "void",
+      "async": false
+    },
+    {
+      "name": "counterUI",
+      "type": "button",
+      "returns": "void",
+      "async": false
+    },
+    {
+      "name": "colorUI",
+      "type": "button",
+      "returns": "void",
+      "async": false
+    },
+    {
+      "name": "imageBlock",
+      "type": "command",
+      "returns": "void",
+      "async": false,
+      "parameters": [
+        {
+          "name": "jibo",
+          "type": "object"
+        }
+      ]
+    },
+    {
+      "name": "giveString",
+      "type": "reporter",
+      "returns": "string",
+      "async": false,
+      "parameters": [
+        {
+          "name": "jibo",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "addFive",
+      "type": "reporter",
+      "returns": "number",
+      "async": false,
+      "parameters": [
+        {
+          "name": "lhs",
+          "type": "number"
+        },
+        {
+          "name": "rhs",
+          "type": "number"
+        }
+      ]
+    }
+  ]
